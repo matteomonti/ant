@@ -1,0 +1,22 @@
+{
+  "name": "ant",
+  "version": "0.0.1",
+  "description": "A C++ build toolchain based on Docker",
+  "main": "src/main.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rainvg/ant.git"
+  },
+  "keywords": [
+    "C++",
+    "build",
+    "toolchain",
+    "Docker"
+  ],
+  "author": "Matteo Monti",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/rainvg/ant/issues"
+  },
+  "homepage": "https://github.com/rainvg/ant#readme"
+}
