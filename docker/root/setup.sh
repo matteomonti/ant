@@ -11,7 +11,6 @@ tar xvfJ clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 mv clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-16.04 /usr/local/clang_6.0.0
 
 apt-get remove -y xz-utils wget
-apt-get autoremove -y
 
 rm clang+llvm-6.0.0-x86_64-linux-gnu-ubuntu-16.04.tar.xz
 rm setup.sh
