@@ -23,12 +23,24 @@ async function identifier(root)
     }
     catch(_)
     {
-        var identifier = randomstring.generate();
+        var identifier = randomstring.generate({length: 6, charset: 'alphanumeric', capitalization: 'lowercase'});
         await fs.writeFileAsync(path.join(root, '.ant', 'identifier'), identifier);
         return identifier;
     }
 }
 
+var configuration = {
+    last_modified: async function(root)
+    {
+        return (await fs.statAsync(path.join(root, "ant.json"))).mtime;
+    },
+    environment: async function(root)
+    {
+        return JSON.parse(await fs.readFileAsync(path.join(root, "ant.json"))).environment || [];
+    }
+}
+
 module.exports = {
-    identifier: identifier
+    identifier: identifier,
+    configuration: configuration
 };

@@ -1,0 +1,4 @@
+{
+    "cxx": [],
+    "linker": ["-lsodium"]
+}
