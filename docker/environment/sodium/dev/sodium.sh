@@ -2,7 +2,7 @@
 
 apt-get update
 apt-get upgrade
-apt-get install -y wget
+apt-get install -y wget make
 
 cd
 
@@ -19,6 +19,6 @@ cd
 rm LATEST.tar.gz
 rm -r libsodium-stable
 
-apt-get remove -y wget
+apt-get remove -y wget make
 
 rm sodium.sh

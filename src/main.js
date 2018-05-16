@@ -6,5 +6,5 @@ const docker = require('./docker.js');
 
 (async function()
 {
-    await docker.build(path.join(os.homedir(), 'anttest'));
+    await docker.start(path.join(os.homedir(), 'anttest'), 'dev');
 })()
