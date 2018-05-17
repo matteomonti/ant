@@ -7,5 +7,5 @@ const parser = require('./parser.js');
 
 (async function()
 {
-    await docker.start(path.join(os.homedir(), 'anttest'), 'dev');
+    console.log(await parser.parse(path.join(os.homedir(), 'anttest'), 'src/test.h'));
 })()

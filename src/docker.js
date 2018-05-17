@@ -154,7 +154,7 @@ async function start(root, target)
             if(name == '/' + container_name)
             {
                 if(container.Image == tag && container.State == 'running')
-                    result.found = true;
+                    result.found = container.Id;
                 else
                     result.remove = container.Id;
             }
@@ -176,13 +176,15 @@ async function start(root, target)
         catch(_){}
     }
 
-    if(!(result.found))
-    {
-        console.log(chalk.red("Builder container not ready, need to boot a new one."));
-        var container = await docker.createContainer({Image: tag, Tty: true, name: container_name, HostConfig: {Binds: [root + ':' + '/repository']}});
-        await container.start();
-        console.log(chalk.green("Builder container started."));
-    }
+    if(result.found)
+        return await docker.getContainer(result.found);
+
+    console.log(chalk.red("Builder container not ready, need to boot a new one."));
+    var container = await docker.createContainer({Image: tag, Tty: true, name: container_name, HostConfig: {Binds: [root + ':' + '/repository']}});
+    await container.start();
+    console.log(chalk.green("Builder container started."));
+
+    return container;
 }
 
 module.exports = {
