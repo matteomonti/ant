@@ -5,12 +5,10 @@ const fs = bluebird.promisifyAll(require('fs'));
 
 const docker = require('./docker.js');
 
-async function preprocess(root, filename)
+async function preprocess(container, root, filename)
 {
     return new Promise(async function(resolve, reject)
     {
-        var container = await docker.start(root, 'dev');
-
         container.exec({Cmd: ['clang++-6.0', '-std=c++2a', '-stdlib=libc++', '-Wno-deprecated', '-E', '-P', path.join('/repository', filename), '-o', path.join('/repository', '.ant', 'output')], AttachStdout: true, AttachStderr: true}, function(err, exec)
         {
             if(err)
@@ -51,12 +49,12 @@ async function preprocess(root, filename)
     });
 }
 
-async function parse(root, filename)
+async function parse(container, root, filename)
 {
     var result = {};
     var err = null;
 
-    var code = await preprocess(root, filename);
+    var code = await preprocess(container, root, filename);
 
     (code.match(/(export\s+)?module\s+([a-zA-Z]([\w\.]*))\s*;/g) || []).forEach(function(statement)
     {
@@ -82,6 +80,22 @@ async function parse(root, filename)
     return result;
 }
 
-module.exports = {
-    parse: parse
+function parser(container, root)
+{
+    // Self
+
+    var self = this;
+
+    // Methods
+
+    self.parse = function(filename)
+    {
+        return parse(container, root, filename);
+    }
+};
+
+module.exports = async function(root)
+{
+    var container = await docker.start(root, 'dev');
+    return new parser(container, root);
 };

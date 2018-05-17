@@ -7,5 +7,6 @@ const parser = require('./parser.js');
 
 (async function()
 {
-    console.log(await parser.parse(path.join(os.homedir(), 'anttest'), 'src/test.h'));
+    var my_parser = await parser(path.join(os.homedir(), 'anttest'));
+    console.log(await my_parser.parse('src/test.h'));
 })()

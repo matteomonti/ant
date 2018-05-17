@@ -23,6 +23,7 @@
     "bluebird": "^3.5.1",
     "chalk": "^2.4.1",
     "dockerode": "^2.5.5",
-    "randomstring": "^1.1.5"
+    "randomstring": "^1.1.5",
+    "sqlite3": "^4.0.0"
   }
 }
