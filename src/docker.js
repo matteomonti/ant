@@ -83,48 +83,48 @@ async function build(root, target)
             if(result.remove)
                 await docker.getImage(tag).remove();
 
-            if(!(result.found))
+            if(result.found)
+                return resolve();
+
+            console.log(chalk.red('No Docker image found for ant.json, building it from scratch.'));
+            await dockerfile(root, target);
+
+            docker.buildImage({context: path.join(root, '.ant', 'docker', target)}, {t: tag}, function(err, stream)
             {
-                console.log(chalk.red('No Docker image found for ant.json, building it from scratch.'));
-                await dockerfile(root, target);
+                console.log(chalk.yellow('Building Docker image..'));
 
-                docker.buildImage({context: path.join(root, '.ant', 'docker', target)}, {t: tag}, function(err, stream)
+                if(err)
+                    console.log(chalk.red('Failed to build image:', err));
+                else
                 {
-                    console.log(chalk.yellow('Building Docker image..'));
-
-                    if(err)
-                        console.log(chalk.red('Failed to build image:', err));
-                    else
+                    stream.on('data', function(chunk)
                     {
-                        stream.on('data', function(chunk)
+                        chunk.toString().split('\n').forEach(function(message)
                         {
-                            chunk.toString().split('\n').forEach(function(message)
+                            try
                             {
-                                try
-                                {
-                                    message = JSON.parse(message).stream.replace(/\r?\n|\r/g, '');
+                                message = JSON.parse(message).stream.replace(/\r?\n|\r/g, '');
 
-                                    if(message.length)
-                                        console.log(message);
-                                }
-                                catch(error)
-                                {
-                                    message = message.replace(/\r?\n|\r/g, '')
+                                if(message.length)
+                                    console.log(message);
+                            }
+                            catch(error)
+                            {
+                                message = message.replace(/\r?\n|\r/g, '')
 
-                                    if(message.length)
-                                        console.log(message)
-                                }
-                            });
+                                if(message.length)
+                                    console.log(message)
+                            }
                         });
+                    });
 
-                        stream.on('end', function()
-                        {
-                            console.log(chalk.green('Docker image successfully built.'));
-                            resolve();
-                        });
-                    }
-                });
-            }
+                    stream.on('end', function()
+                    {
+                        console.log(chalk.green('Docker image successfully built.'));
+                        resolve();
+                    });
+                }
+            });
         }
         catch(error)
         {
@@ -151,10 +151,8 @@ async function start(root, target)
 
         container.Names.forEach(function(name)
         {
-            console.log(name, 'vs', '/' + container_name)
             if(name == '/' + container_name)
             {
-                console.log('Ci sono');
                 if(container.Image == tag && container.State == 'running')
                     result.found = true;
                 else
@@ -181,7 +179,7 @@ async function start(root, target)
     if(!(result.found))
     {
         console.log(chalk.red("Builder container not ready, need to boot a new one."));
-        var container = await docker.createContainer({Image: tag, Tty: true, name: container_name});
+        var container = await docker.createContainer({Image: tag, Tty: true, name: container_name, HostConfig: {Binds: [root + ':' + '/repository']}});
         await container.start();
         console.log(chalk.green("Builder container started."));
     }
