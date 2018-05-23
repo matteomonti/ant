@@ -32,11 +32,11 @@ async function identifier(root)
 var configuration = {
     last_modified: async function(root)
     {
-        return (await fs.statAsync(path.join(root, "ant.json"))).mtime;
+        return (await fs.statAsync(path.join(root, 'ant.json'))).mtime;
     },
     environment: async function(root)
     {
-        return JSON.parse(await fs.readFileAsync(path.join(root, "ant.json"))).environment || [];
+        return JSON.parse(await fs.readFileAsync(path.join(root, 'ant.json'))).environment || [];
     }
 }
 

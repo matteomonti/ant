@@ -179,10 +179,10 @@ async function start(root, target)
     if(result.found)
         return await docker.getContainer(result.found);
 
-    console.log(chalk.red("Builder container not ready, need to boot a new one."));
+    console.log(chalk.red('Builder container not ready, need to boot a new one.'));
     var container = await docker.createContainer({Image: tag, Tty: true, name: container_name, HostConfig: {Binds: [root + ':' + '/repository']}});
     await container.start();
-    console.log(chalk.green("Builder container started."));
+    console.log(chalk.green('Builder container started.'));
 
     return container;
 }

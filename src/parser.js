@@ -51,7 +51,7 @@ async function preprocess(container, root, filename)
 
 async function parse(container, root, filename)
 {
-    var result = {};
+    var result = {filename: filename};
     var err = null;
 
     var code = await preprocess(container, root, filename);
@@ -59,17 +59,27 @@ async function parse(container, root, filename)
     (code.match(/(export\s+)?module\s+([a-zA-Z]([\w\.]*))\s*;/g) || []).forEach(function(statement)
     {
         if(result.module)
-            err = "Multiple module declarations found.";
+            err = 'Multiple module declarations found.';
 
         result.module = statement.replace('export', '').replace('module', '').replace(';', '').replace(/\s*/g, '');
-        result.interface = (statement.indexOf('export') > -1);
+        // result.interface = (statement.indexOf('export') > -1);
+
+        if(statement.indexOf('export') > -1)
+            result.type = 'I';
+        else
+        {
+            if(filename.endsWith('.cpp'))
+                result.type = 'O';
+            else
+                result.type = 'H';
+        }
     });
 
     if(err)
         throw err;
 
     if(!(result.module))
-        throw "No module declaration found.";
+        throw 'No module declaration found.';
 
     result.dependencies = [];
     (code.match(/import\s+([a-zA-Z]([\w\.]*))\s*;/g) || []).forEach(function(statement)
