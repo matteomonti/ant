@@ -3,8 +3,6 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const fs = bluebird.promisifyAll(require('fs'));
 
-// select file, module as M from dependencies where (select count(*) from modules where module = M) = 0;
-
 function database(db)
 {
     // Self
@@ -91,7 +89,6 @@ function database(db)
         return new Promise(async function(resolve, reject)
         {
             built.last = await built();
-            console.log('At the beginning there are', built.last, 'built files');
 
             function recursion()
             {
@@ -101,7 +98,6 @@ function database(db)
                         return reject(err);
 
                     built.new = await built();
-                    console.log('There are', built.new, 'sources built, before they were', built.last);
 
                     if(built.new != built.last)
                     {
@@ -120,6 +116,144 @@ function database(db)
             };
 
             recursion();
+        });
+    };
+
+    self.errors = function()
+    {
+        return new Promise(function(resolve, reject)
+        {
+            var errors = [];
+
+            db.all('select distinct module as M from modules where (select count(*) from modules where module = M and type = \'I\') = 0;', function(err, rows)
+            {
+                if(err)
+                    return reject(err);
+
+                rows.forEach(function(row)
+                {
+                    errors.push({type: 'no-interface', module: row.M});
+                });
+
+                db.all('select distinct(module) as M from modules where (select count(*) from modules where module = M and type = \'I\') > 1;', function(err, rows)
+                {
+                    if(err)
+                        return reject(err);
+
+                    rows.forEach(function(row)
+                    {
+                        errors.push({type: 'multiple-interfaces', module: row.M});
+                    });
+
+                    db.all('select file, module as M from dependencies where (select count(*) from modules where module = M) == 0;', function(err, rows)
+                    {
+                        if(err)
+                            return reject(err);
+
+                        rows.forEach(function(row)
+                        {
+                            errors.push({type: 'missing-dependency', file: row.file, module: row.M});
+                        });
+
+                        db.all('select distinct modules.module as source, dependencies.module as destination from modules, dependencies where dependencies.file in (select file from modules where module = source);', function(err, rows)
+                        {
+                            if(err)
+                                return reject(err);
+
+                            dependencies = {};
+
+                            rows.forEach(function(row)
+                            {
+                                if(!(dependencies[row.source]))
+                                    dependencies[row.source] = [];
+
+                                dependencies[row.source].push(row.destination);
+                            });
+
+                            var cycles = function(dependencies)
+                            {
+                                var cycles = [];
+
+                                var explore = function(root, module, path)
+                                {
+                                    if(dependencies[module])
+                                        for(var index = 0; index < dependencies[module].length; index++)
+                                        {
+                                            if(dependencies[module][index] == root)
+                                                return path;
+
+                                            if(path.indexOf(dependencies[module][index]) != -1)
+                                                continue;
+
+                                            var branch = explore(root, dependencies[module][index], path.concat([dependencies[module][index]]));
+
+                                            if(branch)
+                                                return branch;
+                                        }
+                                };
+
+                                for(var module in dependencies)
+                                {
+                                    var cycle = explore(module, module, [module]);
+                                    if(cycle)
+                                        cycles.push(cycle);
+                                }
+
+                                var equal = function(alpha, beta)
+                                {
+                                    if(alpha.length != beta.length)
+                                        return false;
+
+                                    for(var index = 0; index < alpha.length; index++)
+                                        if(alpha[index] != beta[index])
+                                            return false;
+
+                                    return true;
+                                };
+
+                                var minidx = function(arr)
+                                {
+                                    var minidx = 0;
+
+                                    for(var index = 1; index < arr.length; index++)
+                                        if(arr[index] < arr[minidx])
+                                            minidx = index;
+
+                                    return minidx;
+                                }
+
+                                var rotate = function(arr)
+                                {
+                                    var idx = minidx(arr);
+                                    return arr.slice(idx).concat(arr.slice(0, idx));
+                                }
+
+                                for(var index = 0; index < cycles.length; index++)
+                                    cycles[index] = rotate(cycles[index]);
+
+                                for(var alpha = 0; alpha < cycles.length; alpha++)
+                                    for(var beta = alpha + 1; beta < cycles.length; beta++)
+                                    {
+                                        if(equal(cycles[alpha], cycles[beta]))
+                                        {
+                                            cycles.splice(beta, 1);
+                                            beta--;
+                                        }
+                                    }
+
+                                return cycles;
+                            };
+
+                            cycles(dependencies).forEach(function(cycle)
+                            {
+                                errors.push({type: 'cyclic-dependency', cycle: cycle});
+                            });
+
+                            resolve(errors);
+                        });
+                    });
+                });
+            });
         });
     };
 

@@ -7,5 +7,5 @@ const database = require('./database.js');
 (async function()
 {
     var my_builder = await builder(path.join(os.homedir(), 'anttest'));
-    await my_builder.index();
+    await my_builder.build();
 })()
