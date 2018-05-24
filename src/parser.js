@@ -62,7 +62,6 @@ async function parse(container, root, filename)
             err = 'Multiple module declarations found.';
 
         result.module = statement.replace('export', '').replace('module', '').replace(';', '').replace(/\s*/g, '');
-        // result.interface = (statement.indexOf('export') > -1);
 
         if(statement.indexOf('export') > -1)
             result.type = 'I';
